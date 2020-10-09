@@ -75,6 +75,7 @@ import com.dtstack.flinkx.postgresql.reader.PostgresqlReader;
 import com.dtstack.flinkx.postgresql.writer.PostgresqlWriter;
 import com.dtstack.flinkx.reader.BaseDataReader;
 import com.dtstack.flinkx.redis.writer.RedisWriter;
+import com.dtstack.flinkx.restapi.reader.RestapiReader;
 import com.dtstack.flinkx.restapi.writer.RestapiWriter;
 import com.dtstack.flinkx.sqlserver.reader.SqlserverReader;
 import com.dtstack.flinkx.sqlserver.writer.SqlserverWriter;
@@ -130,7 +131,7 @@ public class LocalTest {
 //        conf.setString("metrics.reporter.promgateway.randomJobNameSuffix","true");
 //        conf.setString("metrics.reporter.promgateway.deleteOnShutdown","true");
 
-        String jobPath = "D:\\dtstack\\flinkx-all\\flinkx-examples\\examples\\clickhouse_stream.json";
+        String jobPath = "D:\\work\\flinkx\\flinkx_json\\stream_hbase.json";
         String savePointPath = "";
         JobExecutionResult result = LocalTest.runJob(new File(jobPath), confProperties, savePointPath);
         ResultPrintUtil.printResult(result);
@@ -229,6 +230,7 @@ public class LocalTest {
             case PluginNameConstants.EMQX_READER : reader = new EmqxReader(config, env); break;
             case PluginNameConstants.DM_READER : reader = new DmReader(config, env); break;
             case PluginNameConstants.GREENPLUM_READER : reader = new GreenplumReader(config, env); break;
+            case PluginNameConstants.RESTAPI_READER : reader = new RestapiReader(config, env); break;
             default:throw new IllegalArgumentException("Can not find reader by name:" + readerName);
         }
 

@@ -84,6 +84,7 @@ public class PluginNameConstants {
     public static final String PHOENIX_WRITER = "phoenixwriter";
     public static final String EMQX_WRITER = "emqxwriter";
     public static final String RESTAPI_WRITER = "restapiwriter";
+    public static final String RESTAPI_READER = "restapireader";
     public static final String DM_WRITER = "dmwriter";
     public static final String GREENPLUM_WRITER = "greenplumwriter";
 }

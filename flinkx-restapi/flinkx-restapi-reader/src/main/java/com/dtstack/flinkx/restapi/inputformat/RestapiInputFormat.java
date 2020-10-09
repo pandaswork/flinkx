@@ -92,8 +92,10 @@ public class RestapiInputFormat extends BaseRichInputFormat {
 
     @Override
     protected Row nextRecordInternal(Row row) throws IOException {
-        row = new Row(1);
-        row.setField(0, entityDataToMap);
+        row = new Row(2);
+//        row.setField(0, entityDataToMap);
+        row.setField(0, 123);
+        row.setField(1, "lining");
         getData = false;
         return row;
     }

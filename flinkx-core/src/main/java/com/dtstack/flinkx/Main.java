@@ -134,8 +134,9 @@ public class Main {
         }
 
         addEnvClassPath(env, ClassLoaderManager.getClassPath());
-
+        LOG.info("flinkx test execute start jobIdString={}",jobIdString);
         JobExecutionResult result = env.execute(jobIdString);
+        LOG.info("flinkx test execute end result={}",result);
         if(env instanceof MyLocalStreamEnvironment){
             ResultPrintUtil.printResult(result);
         }

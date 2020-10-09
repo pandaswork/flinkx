@@ -93,9 +93,10 @@ public class HttpUtil {
             throw new RuntimeException("Unsupported method:" + method);
         }
 
-        for (Map.Entry<String, String> entry : header.entrySet()) {
+        request.addHeader("Cookie","monitorAppIdOV=; monitorPanelIdOV=; clusterType=dc; SHRIOSESSIONID=3173cbcd-a314-4825-9cfb-a26f29bd1480");
+        /*for (Map.Entry<String, String> entry : header.entrySet()) {
             request.addHeader(entry.getKey(), entry.getValue());
-        }
+        }*/
         return request;
     }
 

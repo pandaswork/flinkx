@@ -28,6 +28,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.types.Row;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +96,7 @@ public class HbaseWriter extends BaseDataWriter {
             }
         }
 
-        Object rowKeyInfo = writerConfig.getParameter().getStringVal(KEY_ROW_KEY_COLUMN);
+        Object rowKeyInfo = writerConfig.getParameter().getVal(KEY_ROW_KEY_COLUMN);
         rowkeyExpress = buildRowKeyExpress(rowKeyInfo);
 
         Map<String,Object> versionColumn = (Map<String, Object>) writerConfig.getParameter().getVal(KEY_VERSION_COLUMN);

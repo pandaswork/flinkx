@@ -37,4 +37,4 @@ JAR_DIR=$FLINKX_HOME/lib/*
 CLASS_NAME=com.dtstack.flinkx.launcher.Launcher
 
 echo "flinkx starting ..."
-nohup $JAVA_RUN -cp $JAR_DIR $CLASS_NAME $@ &
+nohup "$JAVA_RUN" -cp $JAR_DIR $CLASS_NAME $@ &
