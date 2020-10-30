@@ -19,11 +19,11 @@
 package com.dtstack.flinkx.hbase;
 
 import com.dtstack.flinkx.authenticate.KerberosUtil;
-import com.dtstack.flinkx.util.FileSystemUtil;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
@@ -32,6 +32,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
@@ -63,15 +64,32 @@ public class HbaseHelper {
             KEY_HBASE_REGIONSERVER_KEYTAB_FILE,
             KEY_HBASE_REGIONSERVER_KERBEROS_PRINCIPAL
     );
+    private static final Configuration hdfsConf;
+    private static final Configuration hbaseConf;
+    static {
+        hdfsConf =new Configuration();
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        hbaseConf = HBaseConfiguration.create(hdfsConf);
+        hbaseConf.addResource(new Path("/etc/hbase/conf" + "/hbase-site.xml"));
+        hbaseConf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        hbaseConf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        hbaseConf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        hbaseConf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        hbaseConf.setInt(" hbase.client.retries.number",5);
+    }
 
     public static org.apache.hadoop.hbase.client.Connection getHbaseConnection(Map<String,Object> hbaseConfigMap) {
         Validate.isTrue(hbaseConfigMap != null && hbaseConfigMap.size() !=0, "hbaseConfig不能为空Map结构!");
 
         if(openKerberos(hbaseConfigMap)){
+            LOG.info("flinkx test openKerberos begin");
             return getConnectionWithKerberos(hbaseConfigMap);
         }
 
         try {
+            LOG.info("flinkx test createConnection begin");
             Configuration hConfiguration = getConfig(hbaseConfigMap);
             return ConnectionFactory.createConnection(hConfiguration);
         } catch (IOException e) {
@@ -86,7 +104,7 @@ public class HbaseHelper {
                 throw new IllegalArgumentException(String.format("Must provide [%s] when authentication is Kerberos", key));
             }
         }
-
+/*
         String keytabFileName = KerberosUtil.getPrincipalFileName(hbaseConfigMap);
 
         keytabFileName = KerberosUtil.loadFile(hbaseConfigMap, keytabFileName);
@@ -97,17 +115,21 @@ public class HbaseHelper {
 
         UserGroupInformation ugi;
         try {
+            LOG.info("flinkx test loginAndReturnUgi begin");
             ugi = KerberosUtil.loginAndReturnUgi(conf, principal, keytabFileName);
+            LOG.info("flinkx test loginAndReturnUgi end");
         } catch (Exception e){
             throw new RuntimeException("Login kerberos error", e);
         }
+        UserGroupInformation.setLoginUser(ugi);*/
 
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser");
         return ugi.doAs(new PrivilegedAction<Connection>() {
             @Override
             public Connection run() {
                 try {
-                    Configuration hConfiguration = getConfig(hbaseConfigMap);
-                    return ConnectionFactory.createConnection(hConfiguration);
+//                    Configuration hConfiguration = getConfig(hbaseConfigMap);
+                    return ConnectionFactory.createConnection(hbaseConf);
                 } catch (IOException e) {
                     LOG.error("Get connection fail with config:{}", hbaseConfigMap);
                     throw new RuntimeException(e);
@@ -140,13 +162,21 @@ public class HbaseHelper {
         org.apache.hadoop.hbase.client.Admin admin = null;
         RegionLocator regionLocator = null;
         try {
+            LOG.info("flinkx test getAdmin");
             admin = hConnection.getAdmin();
+            LOG.info("flinkx test checkHbaseTable");
             HbaseHelper.checkHbaseTable(admin,hTableName);
+            LOG.info("flinkx test getRegionLocator");
             regionLocator = hConnection.getRegionLocator(hTableName);
+            LOG.info("flinkx test getRegionLocator end");
         } catch (Exception e) {
+            LOG.info("flinkx test Exception start e={}",e);
             HbaseHelper.closeRegionLocator(regionLocator);
+            LOG.info("flinkx test closeRegionLocator end");
             HbaseHelper.closeAdmin(admin);
+            LOG.info("flinkx test closeAdmin end");
             HbaseHelper.closeConnection(hConnection);
+            LOG.info("flinkx test closeConnection end");
             throw new RuntimeException(e);
         }
         return regionLocator;

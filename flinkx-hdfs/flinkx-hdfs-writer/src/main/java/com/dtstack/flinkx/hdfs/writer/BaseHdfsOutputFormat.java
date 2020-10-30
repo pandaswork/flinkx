@@ -167,7 +167,8 @@ public abstract class BaseHdfsOutputFormat extends BaseFileOutputFormat {
     @Override
     protected void openSource() throws IOException{
         try{
-            conf = FileSystemUtil.getConfiguration(hadoopConfig, defaultFs);
+//            conf = FileSystemUtil.getConfiguration(hadoopConfig, defaultFs);
+            conf = FileSystemUtil.getConfiguration();
             fs = FileSystemUtil.getFileSystem(hadoopConfig, defaultFs);
         } catch (Exception e){
             throw new RuntimeException("Get FileSystem error", e);

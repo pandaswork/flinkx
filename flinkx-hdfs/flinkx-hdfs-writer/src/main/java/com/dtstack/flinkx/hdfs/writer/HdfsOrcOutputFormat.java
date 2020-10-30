@@ -130,7 +130,7 @@ public class HdfsOrcOutputFormat extends BaseHdfsOutputFormat {
 
         try {
             String currentBlockTmpPath = tmpPath + SP + currentBlockFileName;
-            recordWriter = outputFormat.getRecordWriter(null, jobConf, currentBlockTmpPath, Reporter.NULL);
+            recordWriter = outputFormat.getRecordWriter(fs, jobConf, currentBlockTmpPath, Reporter.NULL);
             blockIndex++;
 
             LOG.info("nextBlock:Current block writer record:" + rowsOfCurrentBlock);

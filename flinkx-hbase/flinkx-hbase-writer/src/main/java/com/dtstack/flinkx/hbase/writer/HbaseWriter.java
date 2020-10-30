@@ -78,7 +78,7 @@ public class HbaseWriter extends BaseDataWriter {
             }
         }
 
-        Object rowKeyInfo = writerConfig.getParameter().getStringVal(KEY_ROW_KEY_COLUMN);
+        Object rowKeyInfo = writerConfig.getParameter().getVal(KEY_ROW_KEY_COLUMN);
         rowkeyExpress = buildRowKeyExpress(rowKeyInfo);
 
         Map<String,Object> versionColumn = (Map<String, Object>) writerConfig.getParameter().getVal(KEY_VERSION_COLUMN);

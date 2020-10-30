@@ -24,6 +24,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -85,7 +86,7 @@ public class FileSystemUtil {
     }
 
     private static FileSystem getFsWithKerberos(Map<String, Object> hadoopConfig, String defaultFs) throws Exception{
-        String keytabFileName = KerberosUtil.getPrincipalFileName(hadoopConfig);
+        /*String keytabFileName = KerberosUtil.getPrincipalFileName(hadoopConfig);
 
         keytabFileName = KerberosUtil.loadFile(hadoopConfig, keytabFileName);
         String principal = KerberosUtil.findPrincipalFromKeytab(keytabFileName);
@@ -93,12 +94,14 @@ public class FileSystemUtil {
 
         UserGroupInformation ugi = KerberosUtil.loginAndReturnUgi(getConfiguration(hadoopConfig, defaultFs), principal, keytabFileName);
         UserGroupInformation.setLoginUser(ugi);
-
+*/
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser");
         return ugi.doAs(new PrivilegedAction<FileSystem>() {
             @Override
             public FileSystem run(){
                 try {
-                    return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
+//                    return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
+                    return FileSystem.get(getConfiguration());
                 } catch (Exception e){
                     throw new RuntimeException("Get FileSystem with kerberos error:", e);
                 }
@@ -106,6 +109,17 @@ public class FileSystemUtil {
         });
     }
 
+    public static JobConf getJobConf() {
+        return new JobConf(getConfiguration());
+    }
+    public static Configuration getConfiguration() {
+        Configuration conf = new Configuration();
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        return conf;
+    }
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
         confMap = fillConfig(confMap, defaultFs);
 
@@ -120,14 +134,15 @@ public class FileSystemUtil {
     }
 
     public static JobConf getJobConf(Map<String, Object> confMap, String defaultFs){
-        confMap = fillConfig(confMap, defaultFs);
+        JobConf jobConf = getJobConf();
+        /*confMap = fillConfig(confMap, defaultFs);
 
         JobConf jobConf = new JobConf();
         confMap.forEach((key, val) -> {
             if(val != null){
                 jobConf.set(key, val.toString());
             }
-        });
+        });*/
 
         return jobConf;
     }

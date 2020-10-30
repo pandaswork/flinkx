@@ -128,7 +128,7 @@ public class LocalTest {
 //        conf.setString("metrics.reporter.promgateway.randomJobNameSuffix","true");
 //        conf.setString("metrics.reporter.promgateway.deleteOnShutdown","false");
 
-        String jobPath = "D:\\dtstack\\flinkx-all\\flinkx-examples\\examples\\clickhouse_stream.json";
+        String jobPath = "D:\\work\\flinkx\\flinkx_json\\stream_hive.json";
         String savePointPath = "";
         JobExecutionResult result = LocalTest.runJob(new File(jobPath), confProperties, savePointPath);
         ResultPrintUtil.printResult(result);

@@ -24,6 +24,7 @@ import com.dtstack.flinkx.util.Md5Util;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,9 @@ public class KerberosUtil {
     private static final String JAVA_VENDOR_IBM = "IBM";
 
     private static String LOCAL_CACHE_DIR;
+
+    private static final Configuration hdfsConf;
+
     static {
         String systemInfo = System.getProperty(ConstantValue.SYSTEM_PROPERTIES_KEY_OS);
         if(systemInfo.toLowerCase().startsWith(ConstantValue.OS_WINDOWS)){
@@ -63,6 +67,11 @@ public class KerberosUtil {
         }
 
         createDir(LOCAL_CACHE_DIR);
+
+        hdfsConf =new Configuration();
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
     }
 
     public static UserGroupInformation loginAndReturnUgi(Configuration conf, String principal, String keytab) throws IOException {
@@ -236,5 +245,33 @@ public class KerberosUtil {
         }
 
         return fileName;
+    }
+
+    public static UserGroupInformation createProxyUser(String proxyUser) {
+        LOG.info("createProxyUser,proxyUser={}",proxyUser);
+        UserGroupInformation ugi = null;
+        try {
+            getServerUgi().checkTGTAndReloginFromKeytab();
+            ugi = UserGroupInformation.createProxyUser(proxyUser,
+                    getServerUgi());
+        } catch (Exception e) {
+            LOG.error("Error in createProxyUser", e);
+        }
+        LOG.debug("ugi={}", ugi);
+        return ugi;
+    }
+    public static UserGroupInformation getServerUgi() {
+        UserGroupInformation information = null;
+        UserGroupInformation.setConfiguration(hdfsConf);
+        try {
+            UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", "/opt/userdata/keytab/hue.keytab_10.11.159.156");
+            information = UserGroupInformation.getLoginUser();
+            LOG.info("服务器keytab验证成功,principal={},keytab={}");
+            LOG.info(information.toString());
+        } catch (IOException e) {
+            LOG.error("服务器keytab验证失败", e.getMessage());
+        }
+        System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
+        return information;
     }
 }

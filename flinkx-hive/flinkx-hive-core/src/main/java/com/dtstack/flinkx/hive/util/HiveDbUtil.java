@@ -75,15 +75,19 @@ public final class HiveDbUtil {
     }
 
     public static Connection getConnection(ConnectionInfo connectionInfo) {
-        if(openKerberos(connectionInfo.getJdbcUrl())){
+        return getConnectionWithRetry(connectionInfo);
+        /*if(openKerberos(connectionInfo.getJdbcUrl())){
             return getConnectionWithKerberos(connectionInfo);
         } else {
             return getConnectionWithRetry(connectionInfo);
-        }
+        }*/
     }
 
     private static Connection getConnectionWithRetry(ConnectionInfo connectionInfo){
         try {
+            System.setProperty("java.security.krb5.debug", "true");
+            System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
+            System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
             return RetryUtil.executeWithRetry(new Callable<Connection>() {
                 @Override
                 public Connection call() throws Exception {
@@ -96,7 +100,7 @@ public final class HiveDbUtil {
     }
 
     private static Connection getConnectionWithKerberos(ConnectionInfo connectionInfo){
-        if(connectionInfo.getHiveConf() == null || connectionInfo.getHiveConf().isEmpty()){
+        /*if(connectionInfo.getHiveConf() == null || connectionInfo.getHiveConf().isEmpty()){
             throw new IllegalArgumentException("hiveConf can not be null or empty");
         }
 
@@ -108,14 +112,8 @@ public final class HiveDbUtil {
 
         Configuration conf = FileSystemUtil.getConfiguration(connectionInfo.getHiveConf(), null);
 
-        UserGroupInformation ugi;
-        try {
-            ugi = KerberosUtil.loginAndReturnUgi(conf, principal, keytabFileName);
-        } catch (Exception e){
-            throw new RuntimeException("Login kerberos error:", e);
-        }
-
-        LOG.info("current ugi:{}", ugi);
+        UserGroupInformation ugi;*/
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser");
         return ugi.doAs(new PrivilegedAction<Connection>() {
             @Override
             public Connection run(){
@@ -126,9 +124,9 @@ public final class HiveDbUtil {
 
     private static boolean openKerberos(final String jdbcUrl){
         String[] splits = jdbcUrl.split(JDBC_REGEX);
-        if (splits.length != 2) {
+        /*if (splits.length != 2) {
             return false;
-        }
+        }*/
 
         String paramsStr = splits[1];
         String[] paramArray = paramsStr.split(PARAM_DELIMITER);
@@ -229,11 +227,12 @@ public final class HiveDbUtil {
 
         if (StringUtils.isNotEmpty(host) && StringUtils.isNotEmpty(db)) {
             param = param == null ? "" : param;
-            url = String.format("jdbc:hive2://%s:%s/%s", host, port, param);
+//            url = String.format("jdbc:hive2://%s:%s/%s", host, port, param);
             Connection connection = DriverManager.getConnection(url, prop);
-            if (StringUtils.isNotEmpty(db)) {
+            /*if (StringUtils.isNotEmpty(db)) {
                 try {
-                    connection.createStatement().execute("use " + db);
+//                    connection.createStatement().execute("use " + db);
+                    connection.createStatement();
                 } catch (SQLException e) {
                     if (connection != null) {
                         connection.close();
@@ -245,7 +244,7 @@ public final class HiveDbUtil {
                         throw e;
                     }
                 }
-            }
+            }*/
 
             return connection;
         }
