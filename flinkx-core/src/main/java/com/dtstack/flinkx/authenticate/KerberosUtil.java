@@ -21,6 +21,7 @@ package com.dtstack.flinkx.authenticate;
 
 import com.dtstack.flinkx.constants.ConstantValue;
 import com.dtstack.flinkx.util.Md5Util;
+import com.google.common.collect.Maps;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -262,7 +263,22 @@ public class KerberosUtil {
     }
     public static UserGroupInformation getServerUgi() {
         UserGroupInformation information = null;
-        UserGroupInformation.setConfiguration(hdfsConf);
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("fs.defaultFS", "hdfs://adserv");
+        map.put("fs.hdfs.impl.disable.cache", "true");
+//        confMap = fillConfig(confMap, defaultFs);
+
+        Configuration conf = new Configuration();
+        map.forEach((key, val) -> {
+            if(val != null){
+                conf.set(key, val.toString());
+            }
+        });
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        UserGroupInformation.setConfiguration(conf);
         try {
             UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", "/opt/userdata/keytab/hue.keytab_10.11.159.156");
             information = UserGroupInformation.getLoginUser();

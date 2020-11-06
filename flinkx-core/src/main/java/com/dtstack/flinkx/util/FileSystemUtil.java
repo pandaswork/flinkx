@@ -20,6 +20,7 @@
 package com.dtstack.flinkx.util;
 
 import com.dtstack.flinkx.authenticate.KerberosUtil;
+import com.google.common.collect.Maps;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -100,8 +101,8 @@ public class FileSystemUtil {
             @Override
             public FileSystem run(){
                 try {
-//                    return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
-                    return FileSystem.get(getConfiguration());
+                    return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
+//                    return FileSystem.get(getConfiguration());
                 } catch (Exception e){
                     throw new RuntimeException("Get FileSystem with kerberos error:", e);
                 }
@@ -121,20 +122,25 @@ public class FileSystemUtil {
         return conf;
     }
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
-        confMap = fillConfig(confMap, defaultFs);
+        Map<String, Object> map = Maps.newHashMap();
+        map.put(KEY_HA_DEFAULT_FS, defaultFs);
+        map.put(KEY_FS_HDFS_IMPL_DISABLE_CACHE, "true");
+//        confMap = fillConfig(confMap, defaultFs);
 
         Configuration conf = new Configuration();
-        confMap.forEach((key, val) -> {
+        map.forEach((key, val) -> {
             if(val != null){
                 conf.set(key, val.toString());
             }
         });
-
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
         return conf;
     }
 
     public static JobConf getJobConf(Map<String, Object> confMap, String defaultFs){
-        JobConf jobConf = getJobConf();
         /*confMap = fillConfig(confMap, defaultFs);
 
         JobConf jobConf = new JobConf();
@@ -144,7 +150,8 @@ public class FileSystemUtil {
             }
         });*/
 
-        return jobConf;
+        return new JobConf(getConfiguration(confMap,defaultFs));
+
     }
 
     private static Map<String, Object> fillConfig(Map<String, Object> confMap, String defaultFs) {
