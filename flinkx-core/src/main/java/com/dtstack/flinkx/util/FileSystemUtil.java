@@ -20,10 +20,12 @@
 package com.dtstack.flinkx.util;
 
 import com.dtstack.flinkx.authenticate.KerberosUtil;
+import com.google.common.collect.Maps;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -115,29 +117,42 @@ public class FileSystemUtil {
     }
 
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
-        confMap = fillConfig(confMap, defaultFs);
+        Map<String, Object> map = Maps.newHashMap();
+        map.put(KEY_HA_DEFAULT_FS, defaultFs);
+        map.put(KEY_FS_HDFS_IMPL_DISABLE_CACHE, "true");
+//        confMap = fillConfig(confMap, defaultFs);
 
         Configuration conf = new Configuration();
-        confMap.forEach((key, val) -> {
+        map.forEach((key, val) -> {
             if(val != null){
                 conf.set(key, val.toString());
             }
         });
-
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
         return conf;
     }
 
     public static JobConf getJobConf(Map<String, Object> confMap, String defaultFs){
+        /*Configuration conf = new Configuration();
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+
         confMap = fillConfig(confMap, defaultFs);
 
-        JobConf jobConf = new JobConf();
+        JobConf jobConf = new JobConf(conf);
         confMap.forEach((key, val) -> {
             if(val != null){
                 jobConf.set(key, val.toString());
             }
-        });
+        });*/
 
-        return jobConf;
+
+        return new JobConf(getConfiguration(confMap,defaultFs));
     }
 
     private static Map<String, Object> fillConfig(Map<String, Object> confMap, String defaultFs) {
