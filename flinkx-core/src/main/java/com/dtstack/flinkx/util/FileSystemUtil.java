@@ -118,7 +118,7 @@ public class FileSystemUtil {
 
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
         Map<String, Object> map = Maps.newHashMap();
-        map.put(KEY_HA_DEFAULT_FS, defaultFs);
+//        map.put(KEY_HA_DEFAULT_FS, defaultFs);
         map.put(KEY_FS_HDFS_IMPL_DISABLE_CACHE, "true");
 //        confMap = fillConfig(confMap, defaultFs);
 
