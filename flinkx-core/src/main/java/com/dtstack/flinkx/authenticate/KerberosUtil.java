@@ -21,9 +21,11 @@ package com.dtstack.flinkx.authenticate;
 
 import com.dtstack.flinkx.constants.ConstantValue;
 import com.dtstack.flinkx.util.Md5Util;
+import com.google.common.collect.Maps;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,7 +167,57 @@ public class KerberosUtil {
            throw new RuntimeException("keytab file not exists:" + filePath);
        }
     }
+    public static UserGroupInformation createProxyUser(String proxyUser, String keyPath) {
+        LOG.info("createProxyUser,proxyUser={}", proxyUser);
+        UserGroupInformation ugi = null;
+        try {
+            getServerUgi(keyPath).checkTGTAndReloginFromKeytab();
+            ugi = UserGroupInformation.createProxyUser(proxyUser,
+                    getServerUgi(keyPath));
+        } catch (Exception e) {
+            LOG.error("Error in createProxyUser", e);
+        }
+        LOG.debug("ugi={}", ugi);
+        return ugi;
+    }
 
+    public static UserGroupInformation getServerUgi(String keyPath) {
+        UserGroupInformation information = null;
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("fs.defaultFS", "hdfs://adserv");
+        map.put("fs.hdfs.impl.disable.cache", "true");
+//        confMap = fillConfig(confMap, defaultFs);
+
+        Configuration conf = new Configuration();
+        map.forEach((key, val) -> {
+            if (val != null) {
+                conf.set(key, val.toString());
+            }
+        });
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        UserGroupInformation.setConfiguration(conf);
+        try {
+            LOG.info("keyPath={}", keyPath);
+            if (!keyPath.equals("/opt/userdata/keytab/hue.keytab_10.11.159.156")) {
+//                keyPath = loadKeyTabRemote(null,keyPath);
+//                keyPath = KerberosUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath()+"/conf/hue.keytab_10.11.159.156";
+            }
+            LOG.info("keyPath={}", keyPath);
+            UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", keyPath);
+            information = UserGroupInformation.getLoginUser();
+            LOG.info("服务器keytab验证成功,principal={},keytab={}");
+            LOG.info(information.toString());
+        } catch (IOException e) {
+            LOG.error("服务器keytab验证失败", e.getMessage());
+        } catch (Exception e) {
+            LOG.error("服务器keytab验证失败", e.getMessage());
+        }
+        System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
+        return information;
+    }
     private static String loadFromSftp(Map<String, Object> config, String fileName){
         String remoteDir = MapUtils.getString(config, KEY_REMOTE_DIR);
         String filePathOnSftp = remoteDir + "/" + fileName;

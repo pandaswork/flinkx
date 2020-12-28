@@ -63,7 +63,17 @@ public class FileSystemUtil {
 
         return FileSystem.get(getConfiguration(hadoopConfigMap, defaultFs));
     }
-
+    public static JobConf getJobConf() {
+        return new JobConf(getConfiguration());
+    }
+    public static Configuration getConfiguration() {
+        Configuration conf = new Configuration();
+        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
+        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        return conf;
+    }
     public static void setHadoopUserName(Configuration conf){
         String hadoopUserName = conf.get(KEY_HADOOP_USER_NAME);
         if(StringUtils.isEmpty(hadoopUserName)){
@@ -88,7 +98,7 @@ public class FileSystemUtil {
     }
 
     private static FileSystem getFsWithKerberos(Map<String, Object> hadoopConfig, String defaultFs) throws Exception{
-        UserGroupInformation ugi = getUGI(hadoopConfig, defaultFs);
+       /* UserGroupInformation ugi = getUGI(hadoopConfig, defaultFs);
         UserGroupInformation.setLoginUser(ugi);
 
         return ugi.doAs(new PrivilegedAction<FileSystem>() {
@@ -100,11 +110,23 @@ public class FileSystemUtil {
                     throw new RuntimeException("Get FileSystem with kerberos error:", e);
                 }
             }
+        });*/
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
+        return ugi.doAs(new PrivilegedAction<FileSystem>() {
+            @Override
+            public FileSystem run(){
+                try {
+                    return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
+//                    return FileSystem.get(getConfiguration());
+                } catch (Exception e){
+                    throw new RuntimeException("Get FileSystem with kerberos error:", e);
+                }
+            }
         });
     }
 
     public static UserGroupInformation getUGI(Map<String, Object> hadoopConfig, String defaultFs) throws IOException {
-        String keytabFileName = KerberosUtil.getPrincipalFileName(hadoopConfig);
+      /*  String keytabFileName = KerberosUtil.getPrincipalFileName(hadoopConfig);
 
         keytabFileName = KerberosUtil.loadFile(hadoopConfig, keytabFileName);
         String principal = KerberosUtil.getPrincipal(hadoopConfig, keytabFileName);
@@ -113,12 +135,13 @@ public class FileSystemUtil {
         UserGroupInformation ugi = KerberosUtil.loginAndReturnUgi(getConfiguration(hadoopConfig, defaultFs), principal, keytabFileName);
         UserGroupInformation.setLoginUser(ugi);
 
-        return ugi;
+        return ugi;*/
+        return KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
     }
 
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
         Map<String, Object> map = Maps.newHashMap();
-//        map.put(KEY_HA_DEFAULT_FS, defaultFs);
+        map.put(KEY_HA_DEFAULT_FS, defaultFs);
         map.put(KEY_FS_HDFS_IMPL_DISABLE_CACHE, "true");
 //        confMap = fillConfig(confMap, defaultFs);
 

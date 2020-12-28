@@ -31,6 +31,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -102,18 +103,19 @@ public final class HiveDbUtil {
         if(connectionInfo.getHiveConf() == null || connectionInfo.getHiveConf().isEmpty()){
             throw new IllegalArgumentException("hiveConf can not be null or empty");
         }
-
+/*
         String keytabFileName = KerberosUtil.getPrincipalFileName(connectionInfo.getHiveConf());
 
         keytabFileName = KerberosUtil.loadFile(connectionInfo.getHiveConf(), keytabFileName);
         String principal = KerberosUtil.getPrincipal(connectionInfo.getHiveConf(), keytabFileName);
-        KerberosUtil.loadKrb5Conf(connectionInfo.getHiveConf());
+        KerberosUtil.loadKrb5Conf(connectionInfo.getHiveConf());*/
 
-        Configuration conf = FileSystemUtil.getConfiguration(connectionInfo.getHiveConf(), null);
+//        Configuration conf = FileSystemUtil.getConfiguration(connectionInfo.getHiveConf(), null);
 
         UserGroupInformation ugi;
         try {
-            ugi = KerberosUtil.loginAndReturnUgi(conf, principal, keytabFileName);
+            ugi = KerberosUtil.createProxyUser("appuser",connectionInfo.getHiveConf().getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
+//            ugi = KerberosUtil.loginAndReturnUgi(conf, principal, keytabFileName);
         } catch (Exception e){
             throw new RuntimeException("Login kerberos error:", e);
         }

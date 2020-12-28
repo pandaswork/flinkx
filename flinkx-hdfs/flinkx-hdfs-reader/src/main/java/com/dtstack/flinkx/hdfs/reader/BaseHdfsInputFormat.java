@@ -93,7 +93,7 @@ public abstract class BaseHdfsInputFormat extends BaseRichInputFormat {
         JobConf conf = FileSystemUtil.getJobConf(hadoopConfig, defaultFs);
         conf.set(HdfsPathFilter.KEY_REGEX, filterRegex);
         conf.set(HdfsPathFilter.KEY_PATH, inputPath);
-        FileSystemUtil.setHadoopUserName(conf);
+//        FileSystemUtil.setHadoopUserName(conf);
         return conf;
     }
 
