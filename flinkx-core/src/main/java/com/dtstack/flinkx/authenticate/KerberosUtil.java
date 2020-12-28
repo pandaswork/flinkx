@@ -33,8 +33,10 @@ import sun.security.krb5.Config;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ktab.KeyTabEntry;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -61,7 +63,7 @@ public class KerberosUtil {
 
     static {
         String systemInfo = System.getProperty(ConstantValue.SYSTEM_PROPERTIES_KEY_OS);
-        if(systemInfo.toLowerCase().startsWith(ConstantValue.OS_WINDOWS)){
+        if (systemInfo.toLowerCase().startsWith(ConstantValue.OS_WINDOWS)) {
             LOCAL_CACHE_DIR = System.getProperty(ConstantValue.SYSTEM_PROPERTIES_KEY_USER_DIR);
         } else {
             LOCAL_CACHE_DIR = "/tmp/flinkx/keytab";
@@ -69,7 +71,7 @@ public class KerberosUtil {
 
         createDir(LOCAL_CACHE_DIR);
 
-        hdfsConf =new Configuration();
+        hdfsConf = new Configuration();
         hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
         hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
         hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
@@ -84,11 +86,11 @@ public class KerberosUtil {
             throw new IllegalArgumentException("principal can not be null");
         }
 
-        if(StringUtils.isEmpty(keytab)){
+        if (StringUtils.isEmpty(keytab)) {
             throw new IllegalArgumentException("keytab can not be null");
         }
 
-        if(StringUtils.isNotEmpty(conf.get(KEY_JAVA_SECURITY_KRB5_CONF))){
+        if (StringUtils.isNotEmpty(conf.get(KEY_JAVA_SECURITY_KRB5_CONF))) {
             reloadKrb5Conf(conf);
         }
 
@@ -99,7 +101,7 @@ public class KerberosUtil {
         return UserGroupInformation.loginUserFromKeytabAndReturnUGI(principal, keytab);
     }
 
-    private static void reloadKrb5Conf(Configuration conf){
+    private static void reloadKrb5Conf(Configuration conf) {
         String krb5File = conf.get(KEY_JAVA_SECURITY_KRB5_CONF);
         LOG.info("set krb5 file:{}", krb5File);
         System.setProperty(KEY_JAVA_SECURITY_KRB5_CONF, krb5File);
@@ -108,14 +110,14 @@ public class KerberosUtil {
             if (!System.getProperty(ConstantValue.SYSTEM_PROPERTIES_KEY_JAVA_VENDOR).contains(JAVA_VENDOR_IBM)) {
                 Config.refresh();
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             LOG.warn("reload krb5 file:{} error:", krb5File, e);
         }
     }
 
-    public static void loadKrb5Conf(Map<String, Object> kerberosConfig){
+    public static void loadKrb5Conf(Map<String, Object> kerberosConfig) {
         String krb5FilePath = MapUtils.getString(kerberosConfig, KEY_JAVA_SECURITY_KRB5_CONF);
-        if(StringUtils.isEmpty(krb5FilePath)){
+        if (StringUtils.isEmpty(krb5FilePath)) {
             LOG.info("krb5 file is empty,will use default file");
             return;
         }
@@ -127,25 +129,25 @@ public class KerberosUtil {
     /**
      * kerberosConfig
      * {
-     *     "principalFile":"keytab.keytab",
-     *     "remoteDir":"/home/admin",
-     *     "sftpConf":{
-     *          "path" : "/home/admin",
-     *          "password" : "******",
-     *          "port" : "22",
-     *          "auth" : "1",
-     *          "host" : "127.0.0.1",
-     *          "username" : "admin"
-     *     }
+     * "principalFile":"keytab.keytab",
+     * "remoteDir":"/home/admin",
+     * "sftpConf":{
+     * "path" : "/home/admin",
+     * "password" : "******",
+     * "port" : "22",
+     * "auth" : "1",
+     * "host" : "127.0.0.1",
+     * "username" : "admin"
+     * }
      * }
      */
     public static String loadFile(Map<String, Object> kerberosConfig, String filePath) {
         boolean useLocalFile = MapUtils.getBooleanValue(kerberosConfig, KEY_USE_LOCAL_FILE);
-        if(useLocalFile){
+        if (useLocalFile) {
             LOG.info("will use local file:{}", filePath);
             checkFileExists(filePath);
         } else {
-            if(filePath.contains(SP)){
+            if (filePath.contains(SP)) {
                 filePath = filePath.substring(filePath.lastIndexOf(SP) + 1);
             }
 
@@ -155,18 +157,18 @@ public class KerberosUtil {
         return filePath;
     }
 
-    private static void checkFileExists(String filePath){
-       File file = new File(filePath);
-       if (file.exists()){
-           if (file.isDirectory()) {
-               throw new RuntimeException("keytab is a directory:" + filePath);
-           }
-       } else {
-           throw new RuntimeException("keytab file not exists:" + filePath);
-       }
+    private static void checkFileExists(String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                throw new RuntimeException("keytab is a directory:" + filePath);
+            }
+        } else {
+            throw new RuntimeException("keytab file not exists:" + filePath);
+        }
     }
 
-    private static String loadFromSftp(Map<String, Object> config, String fileName){
+    private static String loadFromSftp(Map<String, Object> config, String fileName) {
         String remoteDir = MapUtils.getString(config, KEY_REMOTE_DIR);
         String filePathOnSftp = remoteDir + "/" + fileName;
 
@@ -180,16 +182,16 @@ public class KerberosUtil {
             SftpHandler handler = null;
             try {
                 handler = SftpHandler.getInstanceWithRetry(MapUtils.getMap(config, KEY_SFTP_CONF));
-                if(handler.isFileExist(filePathOnSftp)){
+                if (handler.isFileExist(filePathOnSftp)) {
                     handler.downloadFileWithRetry(filePathOnSftp, fileLocalPath);
 
                     LOG.info("download file:{} to local:{}", filePathOnSftp, fileLocalPath);
                     return fileLocalPath;
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                if (handler != null){
+                if (handler != null) {
                     handler.close();
                 }
             }
@@ -215,14 +217,14 @@ public class KerberosUtil {
         return file.exists() && file.isFile();
     }
 
-    private static String createDir(String dir){
+    private static String createDir(String dir) {
         File file = new File(dir);
-        if (file.exists()){
+        if (file.exists()) {
             return dir;
         }
 
         boolean result = file.mkdirs();
-        if (!result){
+        if (!result) {
             LOG.warn("Create dir failure:{}", dir);
         }
 
@@ -248,20 +250,21 @@ public class KerberosUtil {
         return fileName;
     }
 
-    public static UserGroupInformation createProxyUser(String proxyUser) {
-        LOG.info("createProxyUser,proxyUser={}",proxyUser);
+    public static UserGroupInformation createProxyUser(String proxyUser, String keyPath) {
+        LOG.info("createProxyUser,proxyUser={}", proxyUser);
         UserGroupInformation ugi = null;
         try {
-            getServerUgi().checkTGTAndReloginFromKeytab();
+            getServerUgi(keyPath).checkTGTAndReloginFromKeytab();
             ugi = UserGroupInformation.createProxyUser(proxyUser,
-                    getServerUgi());
+                    getServerUgi(keyPath));
         } catch (Exception e) {
             LOG.error("Error in createProxyUser", e);
         }
         LOG.debug("ugi={}", ugi);
         return ugi;
     }
-    public static UserGroupInformation getServerUgi() {
+
+    public static UserGroupInformation getServerUgi(String keyPath) {
         UserGroupInformation information = null;
         Map<String, Object> map = Maps.newHashMap();
         map.put("fs.defaultFS", "hdfs://adserv");
@@ -270,7 +273,7 @@ public class KerberosUtil {
 
         Configuration conf = new Configuration();
         map.forEach((key, val) -> {
-            if(val != null){
+            if (val != null) {
                 conf.set(key, val.toString());
             }
         });
@@ -280,14 +283,49 @@ public class KerberosUtil {
         conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
         UserGroupInformation.setConfiguration(conf);
         try {
-            UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", "/opt/userdata/keytab/hue.keytab_10.11.159.156");
+            LOG.info("keyPath={}", keyPath);
+            if (!keyPath.equals("/opt/userdata/keytab/hue.keytab_10.11.159.156")) {
+                keyPath = loadKeyTabRemote(null,keyPath);
+//                keyPath = KerberosUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath()+"/conf/hue.keytab_10.11.159.156";
+            }
+            LOG.info("keyPath={}", keyPath);
+            UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", keyPath);
             information = UserGroupInformation.getLoginUser();
             LOG.info("服务器keytab验证成功,principal={},keytab={}");
             LOG.info(information.toString());
         } catch (IOException e) {
             LOG.error("服务器keytab验证失败", e.getMessage());
+        } catch (Exception e) {
+            LOG.error("服务器keytab验证失败", e.getMessage());
         }
         System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
         return information;
+    }
+
+    private static String loadKeyTabRemote(Map<String, Object> config, String fileName) {
+       /* String remoteDir = MapUtils.getString(config, KEY_REMOTE_DIR);
+        String filePathOnSftp = remoteDir + "/" + fileName;
+
+        String localDirName = Md5Util.getMd5(remoteDir);*/
+        String localDir = LOCAL_CACHE_DIR;
+        localDir = createDir(localDir);
+        String fileLocalPath = localDir + SP + fileName;
+        if (fileExists(fileLocalPath)) {
+            return fileLocalPath;
+        } else {
+            try {
+                down("http://panther-backend.bjcnc.scs.sohucs.com/dts/hue.keytab_10.11.159.156", fileLocalPath);
+                LOG.info("download to local:{}", fileLocalPath);
+                return fileLocalPath;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void down(String url, String fileName) throws Exception {
+        try (InputStream in = URI.create(url).toURL().openStream()) {
+            Files.copy(in, Paths.get(fileName));
+        }
     }
 }

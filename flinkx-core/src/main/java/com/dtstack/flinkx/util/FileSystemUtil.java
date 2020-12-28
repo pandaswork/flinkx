@@ -31,6 +31,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,12 +79,15 @@ public class FileSystemUtil {
         }
     }
 
-    private static boolean isOpenKerberos(Map<String, Object> hadoopConfig){
+    public static boolean isOpenKerberos(Map<String, Object> hadoopConfig){
         if(!MapUtils.getBoolean(hadoopConfig, KEY_HADOOP_SECURITY_AUTHORIZATION, false)){
             return false;
         }
 
         return AUTHENTICATION_TYPE.equalsIgnoreCase(MapUtils.getString(hadoopConfig, KEY_HADOOP_SECURITY_AUTHENTICATION));
+    }
+    public static UserGroupInformation getUGI(Map<String, Object> hadoopConfig, String defaultFs) throws IOException {
+        return KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
     }
 
     private static FileSystem getFsWithKerberos(Map<String, Object> hadoopConfig, String defaultFs) throws Exception{
@@ -96,7 +100,7 @@ public class FileSystemUtil {
         UserGroupInformation ugi = KerberosUtil.loginAndReturnUgi(getConfiguration(hadoopConfig, defaultFs), principal, keytabFileName);
         UserGroupInformation.setLoginUser(ugi);
 */
-        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser");
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
         return ugi.doAs(new PrivilegedAction<FileSystem>() {
             @Override
             public FileSystem run(){

@@ -123,7 +123,7 @@ public class HbaseHelper {
         }
         UserGroupInformation.setLoginUser(ugi);*/
 
-        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser");
+        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser",hbaseConfigMap.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
         return ugi.doAs(new PrivilegedAction<Connection>() {
             @Override
             public Connection run() {
