@@ -59,8 +59,6 @@ public class KerberosUtil {
 
     private static String LOCAL_CACHE_DIR;
 
-    private static final Configuration hdfsConf;
-
     static {
         String systemInfo = System.getProperty(ConstantValue.SYSTEM_PROPERTIES_KEY_OS);
         if (systemInfo.toLowerCase().startsWith(ConstantValue.OS_WINDOWS)) {
@@ -70,11 +68,6 @@ public class KerberosUtil {
         }
 
         createDir(LOCAL_CACHE_DIR);
-
-        hdfsConf = new Configuration();
-        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
-        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
-        hdfsConf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
     }
 
     public static UserGroupInformation loginAndReturnUgi(Configuration conf, String principal, String keytab) throws IOException {
@@ -250,13 +243,13 @@ public class KerberosUtil {
         return fileName;
     }
 
-    public static UserGroupInformation createProxyUser(String proxyUser, String keyPath) {
-        LOG.info("createProxyUser,proxyUser={}", proxyUser);
+    public static UserGroupInformation createProxyUser(Map<String, Object> hadoopConfig, String defaultFs) {
+        LOG.info("createProxyUser,hadoopConfig = {} defaultFs = {}", hadoopConfig,defaultFs);
         UserGroupInformation ugi = null;
         try {
-            getServerUgi(keyPath).checkTGTAndReloginFromKeytab();
-            ugi = UserGroupInformation.createProxyUser(proxyUser,
-                    getServerUgi(keyPath));
+            getServerUgi(hadoopConfig,defaultFs).checkTGTAndReloginFromKeytab();
+            ugi = UserGroupInformation.createProxyUser(hadoopConfig.get("proxyUser").toString(),
+                    getServerUgi(hadoopConfig,defaultFs));
         } catch (Exception e) {
             LOG.error("Error in createProxyUser", e);
         }
@@ -264,10 +257,10 @@ public class KerberosUtil {
         return ugi;
     }
 
-    public static UserGroupInformation getServerUgi(String keyPath) {
+    public static UserGroupInformation getServerUgi(Map<String, Object> hadoopConfig, String defaultFs) {
         UserGroupInformation information = null;
         Map<String, Object> map = Maps.newHashMap();
-        map.put("fs.defaultFS", "hdfs://adserv");
+        map.put("fs.defaultFS", defaultFs);
         map.put("fs.hdfs.impl.disable.cache", "true");
 //        confMap = fillConfig(confMap, defaultFs);
 
@@ -277,19 +270,17 @@ public class KerberosUtil {
                 conf.set(key, val.toString());
             }
         });
-        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        conf.addResource(new Path(hadoopConfig.get("hadoopPath").toString() + "/yarn-site.xml"));
+        conf.addResource(new Path(hadoopConfig.get("hadoopPath").toString() + "/core-site.xml"));
+        conf.addResource(new Path(hadoopConfig.get("hadoopPath").toString() + "/mapred-site.xml"));
+        conf.addResource(new Path(hadoopConfig.get("hadoopPath").toString() + "/hdfs-site.xml"));
         UserGroupInformation.setConfiguration(conf);
         try {
+            LOG.info("hadoopConfig={}", hadoopConfig);
+            String keyPath = hadoopConfig.get("principalFile").toString();
+            keyPath = loadKeyTabRemote(null,keyPath);
             LOG.info("keyPath={}", keyPath);
-            if (!keyPath.equals("/opt/userdata/keytab/hue.keytab_10.11.159.156")) {
-                keyPath = loadKeyTabRemote(null,keyPath);
-//                keyPath = KerberosUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath()+"/conf/hue.keytab_10.11.159.156";
-            }
-            LOG.info("keyPath={}", keyPath);
-            UserGroupInformation.loginUserFromKeytab("hue/10.11.159.156@OTOCYON.COM", keyPath);
+            UserGroupInformation.loginUserFromKeytab(hadoopConfig.get("principal").toString(), keyPath);
             information = UserGroupInformation.getLoginUser();
             LOG.info("服务器keytab验证成功,principal={},keytab={}");
             LOG.info(information.toString());
@@ -314,7 +305,7 @@ public class KerberosUtil {
             return fileLocalPath;
         } else {
             try {
-                down("http://panther-backend.bjcnc.scs.sohucs.com/dts/hue.keytab_10.11.159.156", fileLocalPath);
+                down(config.get("principalFileRemoteUrl").toString(), fileLocalPath);
                 LOG.info("download to local:{}", fileLocalPath);
                 return fileLocalPath;
             } catch (Exception e) {

@@ -54,7 +54,7 @@ public class FileSystemUtil {
     private static final String KEY_HADOOP_USER_NAME = "hadoop.user.name";
 
     public static FileSystem getFileSystem(Map<String, Object> hadoopConfigMap, String defaultFs) throws Exception {
-        if(isOpenKerberos(hadoopConfigMap)){
+        if (isOpenKerberos(hadoopConfigMap)) {
             return getFsWithKerberos(hadoopConfigMap, defaultFs);
         }
 
@@ -64,9 +64,9 @@ public class FileSystemUtil {
         return FileSystem.get(getConfiguration(hadoopConfigMap, defaultFs));
     }
 
-    public static void setHadoopUserName(Configuration conf){
+    public static void setHadoopUserName(Configuration conf) {
         String hadoopUserName = conf.get(KEY_HADOOP_USER_NAME);
-        if(StringUtils.isEmpty(hadoopUserName)){
+        if (StringUtils.isEmpty(hadoopUserName)) {
             return;
         }
 
@@ -79,18 +79,19 @@ public class FileSystemUtil {
         }
     }
 
-    public static boolean isOpenKerberos(Map<String, Object> hadoopConfig){
-        if(!MapUtils.getBoolean(hadoopConfig, KEY_HADOOP_SECURITY_AUTHORIZATION, false)){
+    public static boolean isOpenKerberos(Map<String, Object> hadoopConfig) {
+        if (!MapUtils.getBoolean(hadoopConfig, KEY_HADOOP_SECURITY_AUTHORIZATION, false)) {
             return false;
         }
 
         return AUTHENTICATION_TYPE.equalsIgnoreCase(MapUtils.getString(hadoopConfig, KEY_HADOOP_SECURITY_AUTHENTICATION));
     }
+
     public static UserGroupInformation getUGI(Map<String, Object> hadoopConfig, String defaultFs) throws IOException {
-        return KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
+        return KerberosUtil.createProxyUser(hadoopConfig, defaultFs);
     }
 
-    private static FileSystem getFsWithKerberos(Map<String, Object> hadoopConfig, String defaultFs) throws Exception{
+    private static FileSystem getFsWithKerberos(Map<String, Object> hadoopConfig, String defaultFs) throws Exception {
         /*String keytabFileName = KerberosUtil.getPrincipalFileName(hadoopConfig);
 
         keytabFileName = KerberosUtil.loadFile(hadoopConfig, keytabFileName);
@@ -100,15 +101,15 @@ public class FileSystemUtil {
         UserGroupInformation ugi = KerberosUtil.loginAndReturnUgi(getConfiguration(hadoopConfig, defaultFs), principal, keytabFileName);
         UserGroupInformation.setLoginUser(ugi);
 */
-        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser",hadoopConfig.getOrDefault("principalFile","/opt/userdata/keytab/hue.keytab_10.11.159.156").toString());
+        UserGroupInformation ugi = KerberosUtil.createProxyUser(hadoopConfig, defaultFs);
         return ugi.doAs(new PrivilegedAction<FileSystem>() {
             @Override
-            public FileSystem run(){
+            public FileSystem run() {
                 try {
-                    LOG.info("getConfiguration,hadoopConfig={} defaultFs={}", hadoopConfig,defaultFs);
+                    LOG.info("getConfiguration,hadoopConfig={} defaultFs={}", hadoopConfig, defaultFs);
                     return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
 //                    return FileSystem.get(getConfiguration());
-                } catch (Exception e){
+                } catch (Exception e) {
                     throw new RuntimeException("Get FileSystem with kerberos error:", e);
                 }
             }
@@ -118,6 +119,7 @@ public class FileSystemUtil {
     public static JobConf getJobConf() {
         return new JobConf(getConfiguration());
     }
+
     public static Configuration getConfiguration() {
         Configuration conf = new Configuration();
         conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
@@ -126,6 +128,7 @@ public class FileSystemUtil {
         conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
         return conf;
     }
+
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
         Map<String, Object> map = Maps.newHashMap();
         map.put(KEY_HA_DEFAULT_FS, defaultFs);
@@ -134,18 +137,18 @@ public class FileSystemUtil {
 
         Configuration conf = new Configuration();
         map.forEach((key, val) -> {
-            if(val != null){
+            if (val != null) {
                 conf.set(key, val.toString());
             }
         });
-        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
+        conf.addResource(new Path(confMap.get("hadoopPath").toString() + "/yarn-site.xml"));
+        conf.addResource(new Path(confMap.get("hadoopPath").toString() + "/core-site.xml"));
+        conf.addResource(new Path(confMap.get("hadoopPath").toString() + "/mapred-site.xml"));
+        conf.addResource(new Path(confMap.get("hadoopPath").toString() + "/hdfs-site.xml"));
         return conf;
     }
 
-    public static JobConf getJobConf(Map<String, Object> confMap, String defaultFs){
+    public static JobConf getJobConf(Map<String, Object> confMap, String defaultFs) {
         /*confMap = fillConfig(confMap, defaultFs);
 
         JobConf jobConf = new JobConf();
@@ -155,7 +158,7 @@ public class FileSystemUtil {
             }
         });*/
 
-        return new JobConf(getConfiguration(confMap,defaultFs));
+        return new JobConf(getConfiguration(confMap, defaultFs));
 
     }
 
@@ -165,11 +168,11 @@ public class FileSystemUtil {
         }
 
         if (isHaMode(confMap)) {
-            if(defaultFs != null){
+            if (defaultFs != null) {
                 confMap.put(KEY_HA_DEFAULT_FS, defaultFs);
             }
         } else {
-            if(defaultFs != null){
+            if (defaultFs != null) {
                 confMap.put(KEY_DEFAULT_FS, defaultFs);
             }
         }
@@ -178,7 +181,7 @@ public class FileSystemUtil {
         return confMap;
     }
 
-    private static boolean isHaMode(Map<String, Object> confMap){
+    private static boolean isHaMode(Map<String, Object> confMap) {
         return StringUtils.isNotEmpty(MapUtils.getString(confMap, KEY_DFS_NAMESERVICES));
     }
 }

@@ -76,19 +76,14 @@ public class HbaseInputFormat extends BaseRichInputFormat {
     public void openInputFormat() throws IOException {
         super.openInputFormat();
 
-        LOG.info("HbaseOutputFormat openInputFormat start");
         nameMaps = Maps.newConcurrentMap();
 
         connection = HbaseHelper.getHbaseConnection(hbaseConfig);
-
-        LOG.info("HbaseOutputFormat openInputFormat end");
     }
 
     @Override
     public InputSplit[] createInputSplitsInternal(int minNumSplits) throws IOException {
-        LOG.info("flinkx test createInputSplitsInternal begin");
         try (Connection connection = HbaseHelper.getHbaseConnection(hbaseConfig)) {
-            LOG.info("flinkx test getHbaseConnection ok success");
             return split(connection, tableName, startRowkey, endRowkey, isBinaryRowkey);
         }
     }
@@ -102,21 +97,17 @@ public class HbaseInputFormat extends BaseRichInputFormat {
                 && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
             throw new IllegalArgumentException("startRowKey can't be bigger than endRowkey");
         }
-        LOG.info("flinkx test getRegionLocator begin");
         RegionLocator regionLocator = HbaseHelper.getRegionLocator(hConn, tableName);
         List<HbaseInputSplit> resultSplits;
         try {
             Pair<byte[][], byte[][]> regionRanges = regionLocator.getStartEndKeys();
-            LOG.info("flinkx test regionRanges end regionRanges={}",regionRanges);
             if (null == regionRanges) {
                 throw new RuntimeException("Failed to retrieve rowkey ragne");
             }
             resultSplits = doSplit(startRowkeyByte, endRowkeyByte, regionRanges);
 
-            LOG.info("HBaseReader split job into {} tasks.", resultSplits.size());
             return resultSplits.toArray(new HbaseInputSplit[resultSplits.size()]);
         } catch (Exception e) {
-            LOG.info("flinkx test split hbase Exception e={}",e);
             throw new RuntimeException("Failed to split hbase table");
         }finally {
             HbaseHelper.closeRegionLocator(regionLocator);

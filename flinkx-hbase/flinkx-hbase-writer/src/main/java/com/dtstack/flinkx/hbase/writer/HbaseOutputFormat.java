@@ -95,7 +95,6 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
 
     @Override
     public void configure(Configuration parameters) {
-        LOG.info("HbaseOutputFormat configure start");
         nameMaps = Maps.newConcurrentMap();
         nameByteMaps = Maps.newConcurrentMap();
         timeSecondFormatThreadLocal = new ThreadLocal();
@@ -104,13 +103,11 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
 
         try {
             connection = HbaseHelper.getHbaseConnection(hbaseConfig);
-            LOG.info("flinkx test createConnection success");
             org.apache.hadoop.conf.Configuration hConfiguration = HbaseHelper.getConfig(hbaseConfig);
             bufferedMutator = connection.getBufferedMutator(
                     new BufferedMutatorParams(TableName.valueOf(tableName))
                             .pool(HTable.getDefaultExecutor(hConfiguration))
                             .writeBufferSize(writeBufferSize));
-            LOG.info("flinkx test bufferedMutator success");
         } catch (Exception e) {
             HbaseHelper.closeBufferedMutator(bufferedMutator);
             HbaseHelper.closeConnection(connection);
@@ -127,7 +124,6 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
             rowKeyColumnIndex.add(index);
         }
 
-        LOG.info("HbaseOutputFormat configure end");
     }
 
     @Override
@@ -139,7 +135,6 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
     public void writeSingleRecordInternal(Row record) throws WriteRecordException {
         int i = 0;
         try {
-            LOG.info("flinkx test writeSingleRecordInternal record={}",record);
             byte[] rowkey = getRowkey(record);
             Put put;
             //todo versionColumnIndex判断有bug
@@ -187,9 +182,7 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
                     continue;
                 }
             }
-            LOG.info("flinkx test mutate begin");
             bufferedMutator.mutate(put);
-            LOG.info("flinkx test mutate success");
         } catch(Exception ex) {
             if(i < record.getArity()) {
                 throw new WriteRecordException(recordConvertDetailErrorMessage(i, record), ex, i, record);
@@ -517,11 +510,8 @@ public class HbaseOutputFormat extends BaseRichOutputFormat {
         if (null != timeMillisecondFormatThreadLocal) {
             timeMillisecondFormatThreadLocal.remove();
         }
-        LOG.info("flinkx test closeInternal begin");
         HbaseHelper.closeBufferedMutator(bufferedMutator);
-        LOG.info("flinkx test closeInternal closeBufferedMutator");
         HbaseHelper.closeConnection(connection);
-        LOG.info("flinkx test closeInternal closeConnection");
     }
 
 }

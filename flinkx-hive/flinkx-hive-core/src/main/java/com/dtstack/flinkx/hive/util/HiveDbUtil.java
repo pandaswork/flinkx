@@ -113,7 +113,7 @@ public final class HiveDbUtil {
         Configuration conf = FileSystemUtil.getConfiguration(connectionInfo.getHiveConf(), null);
 
         UserGroupInformation ugi;*/
-        UserGroupInformation ugi = KerberosUtil.createProxyUser("appuser","/opt/userdata/keytab/hue.keytab_10.11.159.156");
+        UserGroupInformation ugi = KerberosUtil.createProxyUser(connectionInfo.getHiveConf(),null);
         return ugi.doAs(new PrivilegedAction<Connection>() {
             @Override
             public Connection run(){
