@@ -116,19 +116,6 @@ public class FileSystemUtil {
         });
     }
 
-    public static JobConf getJobConf() {
-        return new JobConf(getConfiguration());
-    }
-
-    public static Configuration getConfiguration() {
-        Configuration conf = new Configuration();
-        conf.addResource(new Path("/etc/hadoop/conf" + "/yarn-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/core-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/mapred-site.xml"));
-        conf.addResource(new Path("/etc/hadoop/conf" + "/hdfs-site.xml"));
-        return conf;
-    }
-
     public static Configuration getConfiguration(Map<String, Object> confMap, String defaultFs) {
         Map<String, Object> map = Maps.newHashMap();
         map.put(KEY_HA_DEFAULT_FS, defaultFs);

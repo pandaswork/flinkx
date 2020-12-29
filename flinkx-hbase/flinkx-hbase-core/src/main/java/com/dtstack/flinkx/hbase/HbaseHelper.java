@@ -109,9 +109,13 @@ public class HbaseHelper {
         hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/core-site.xml"));
         hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/hdfs-site.xml"));
         hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/yarn-site.xml"));
-        hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/mapred-site.xml"));
         Configuration hbaseConf = HBaseConfiguration.create(hdfsConf);
         hbaseConf.addResource(new Path(hbaseConfigMap.get("hbasePath").toString() + "/hbase-site.xml"));
+        hbaseConf.addResource(new Path(hbaseConfigMap.get("hbasePath").toString() + "/core-site.xml"));
+        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/yarn-site.xml"));
+        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/core-site.xml"));
+        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/mapred-site.xml"));
+        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/hdfs-site.xml"));
         hbaseConf.setInt(" hbase.client.retries.number",5);
         UserGroupInformation ugi = KerberosUtil.createProxyUser(hbaseConfigMap, null);
         return ugi.doAs(new PrivilegedAction<Connection>() {
