@@ -105,6 +105,7 @@ public class FileSystemUtil {
             @Override
             public FileSystem run(){
                 try {
+                    LOG.info("getConfiguration,hadoopConfig={} defaultFs={}", hadoopConfig,defaultFs);
                     return FileSystem.get(getConfiguration(hadoopConfig, defaultFs));
 //                    return FileSystem.get(getConfiguration());
                 } catch (Exception e){

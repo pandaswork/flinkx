@@ -76,7 +76,7 @@ public abstract class BaseHdfsOutputFormat extends BaseFileOutputFormat {
 
     @Override
     protected void checkOutputDir() {
-        try{
+       /* try{
             Path dir = new Path(outputFilePath);
 
             if(fs.exists(dir)){
@@ -91,7 +91,7 @@ public abstract class BaseHdfsOutputFormat extends BaseFileOutputFormat {
             }
         } catch (IOException e){
             throw new RuntimeException("Check output path error", e);
-        }
+        }*/
     }
 
     @Override

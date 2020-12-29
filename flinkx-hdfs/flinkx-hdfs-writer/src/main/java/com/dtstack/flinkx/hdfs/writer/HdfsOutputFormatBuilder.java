@@ -91,9 +91,9 @@ public class HdfsOutputFormatBuilder extends FileOutputFormatBuilder {
             throw new IllegalArgumentException("No defaultFS supplied.");
         }
 
-        if (!format.defaultFs.startsWith(ConstantValue.PROTOCOL_HDFS)) {
+      /*  if (!format.defaultFs.startsWith(ConstantValue.PROTOCOL_HDFS)) {
             throw new IllegalArgumentException("defaultFS should start with hdfs://");
-        }
+        }*/
     }
 
 }
