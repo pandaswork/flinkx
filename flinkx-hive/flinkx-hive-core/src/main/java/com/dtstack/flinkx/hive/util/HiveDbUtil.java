@@ -86,7 +86,7 @@ public final class HiveDbUtil {
     private static Connection getConnectionWithRetry(ConnectionInfo connectionInfo){
         try {
             System.setProperty("java.security.krb5.debug", "true");
-            System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
+            System.setProperty("java.security.krb5.conf", connectionInfo.getHiveConf().get("java.security.krb5.conf").toString());
             System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
             return RetryUtil.executeWithRetry(new Callable<Connection>() {
                 @Override

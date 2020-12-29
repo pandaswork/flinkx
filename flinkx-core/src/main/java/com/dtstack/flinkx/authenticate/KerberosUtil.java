@@ -289,7 +289,7 @@ public class KerberosUtil {
         } catch (Exception e) {
             LOG.error("服务器keytab验证失败", e.getMessage());
         }
-        System.setProperty("java.security.krb5.conf", "/etc/krb5.conf");
+        System.setProperty("java.security.krb5.conf", hadoopConfig.get("java.security.krb5.conf").toString());
         return information;
     }
 
