@@ -244,12 +244,12 @@ public class KerberosUtil {
     }
 
     public static UserGroupInformation createProxyUser(Map<String, Object> hadoopConfig, String defaultFs) {
-        LOG.info("createProxyUser,hadoopConfig = {} defaultFs = {}", hadoopConfig,defaultFs);
+        LOG.info("createProxyUser,hadoopConfig = {} defaultFs = {}", hadoopConfig, defaultFs);
         UserGroupInformation ugi = null;
         try {
-            getServerUgi(hadoopConfig,defaultFs).checkTGTAndReloginFromKeytab();
+            getServerUgi(hadoopConfig, defaultFs).checkTGTAndReloginFromKeytab();
             ugi = UserGroupInformation.createProxyUser(hadoopConfig.get("proxyUser").toString(),
-                    getServerUgi(hadoopConfig,defaultFs));
+                    getServerUgi(hadoopConfig, defaultFs));
         } catch (Exception e) {
             LOG.error("Error in createProxyUser", e);
         }
@@ -278,7 +278,7 @@ public class KerberosUtil {
         try {
             LOG.info("hadoopConfig={}", hadoopConfig);
             String keyPath = hadoopConfig.get("principalFile").toString();
-            keyPath = loadKeyTabRemote(null,keyPath);
+            keyPath = loadKeyTabRemote(hadoopConfig, keyPath);
             LOG.info("keyPath={}", keyPath);
             UserGroupInformation.loginUserFromKeytab(hadoopConfig.get("principal").toString(), keyPath);
             information = UserGroupInformation.getLoginUser();
