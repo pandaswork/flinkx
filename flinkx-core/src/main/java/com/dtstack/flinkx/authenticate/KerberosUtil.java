@@ -276,18 +276,16 @@ public class KerberosUtil {
         conf.addResource(new Path(hadoopConfig.get("hadoopPath").toString() + "/hdfs-site.xml"));
         UserGroupInformation.setConfiguration(conf);
         try {
-            LOG.info("hadoopConfig={}", hadoopConfig);
+            LOG.info("hadoopConfig = {}", hadoopConfig);
             String keyPath = hadoopConfig.get("principalFile").toString();
             keyPath = loadKeyTabRemote(hadoopConfig, keyPath);
-            LOG.info("keyPath={}", keyPath);
             UserGroupInformation.loginUserFromKeytab(hadoopConfig.get("principal").toString(), keyPath);
             information = UserGroupInformation.getLoginUser();
-            LOG.info("服务器keytab验证成功,principal={},keytab={}");
-            LOG.info(information.toString());
+            LOG.info("keytab success,principal={},keytab={}", hadoopConfig.get("principal").toString(), keyPath);
         } catch (IOException e) {
-            LOG.error("服务器keytab验证失败", e.getMessage());
+            LOG.error("getServerUgi io fail e = {}", e);
         } catch (Exception e) {
-            LOG.error("服务器keytab验证失败", e.getMessage());
+            LOG.error("getServerUgi fail e = {}", e);
         }
         System.setProperty("java.security.krb5.conf", hadoopConfig.get("java.security.krb5.conf").toString());
         return information;

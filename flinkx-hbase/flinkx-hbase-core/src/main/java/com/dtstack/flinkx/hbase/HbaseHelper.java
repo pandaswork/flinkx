@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
@@ -110,13 +112,16 @@ public class HbaseHelper {
         hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/hdfs-site.xml"));
         hdfsConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/yarn-site.xml"));
         Configuration hbaseConf = HBaseConfiguration.create(hdfsConf);
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hbasePath").toString() + "/hbase-site.xml"));
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hbasePath").toString() + "/core-site.xml"));
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/yarn-site.xml"));
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/core-site.xml"));
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/mapred-site.xml"));
-        hbaseConf.addResource(new Path(hbaseConfigMap.get("hadoopPath").toString() + "/hdfs-site.xml"));
-        hbaseConf.setInt(" hbase.client.retries.number",5);
+        try {
+            hbaseConf.addResource(new URL(String.valueOf(hbaseConfigMap.get("hbase.conf.url"))));
+        } catch (MalformedURLException e) {
+            LOG.error("addResource fail e:{}", e);
+        }
+        /*hbaseConf.set("hbase.zookeeper.quorum", String.valueOf(hbaseConfigMap.get("hbase.zookeeper.quorum")));
+        hbaseConf.set("hbase.zookeeper.property.clientPort", String.valueOf(hbaseConfigMap.get("hbase.zookeeper.property.clientPort")));
+        hbaseConf.set("zookeeper.znode.parent", String.valueOf(hbaseConfigMap.get("zookeeper.znode.parent")));
+        hbaseConf.set("hbase.cluster.distributed", "true");
+        hbaseConf.set("hbase.rootdir", String.valueOf(hbaseConfigMap.get("hbase.rootdir")));*/
         UserGroupInformation ugi = KerberosUtil.createProxyUser(hbaseConfigMap, null);
         return ugi.doAs(new PrivilegedAction<Connection>() {
             @Override

@@ -30,6 +30,7 @@ import com.dtstack.flinkx.outputformat.BaseRichOutputFormat;
 import com.dtstack.flinkx.restore.FormatState;
 import com.dtstack.flinkx.util.ExceptionUtil;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
 import org.apache.flink.types.Row;
 import org.apache.hadoop.conf.Configuration;
@@ -74,6 +75,8 @@ public class HiveOutputFormat extends BaseRichOutputFormat {
     protected String delimiter;
 
     protected String charsetName = "UTF-8";
+
+    protected String hdfsProtocol = "hdfs://";
 
     protected Configuration conf;
 
@@ -244,7 +247,9 @@ public class HiveOutputFormat extends BaseRichOutputFormat {
         if (outputFormat == null) {
             hiveUtil.createPartition(tableInfo, partitionPath);
             String path = tableInfo.getPath() + SP + partitionPath;
-
+            if (path.startsWith(hdfsProtocol) && StringUtils.isNotEmpty(defaultFs)) {
+                path = defaultFs + SP + StringUtils.substringAfter(StringUtils.substringAfter(path, hdfsProtocol), SP);
+            }
             outputFormat = createHdfsOutputFormat(tableInfo, path, hiveTablePath);
             outputFormats.put(hiveTablePath, outputFormat);
         }
